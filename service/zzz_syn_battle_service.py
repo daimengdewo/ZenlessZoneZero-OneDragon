@@ -2,7 +2,7 @@ import requests
 import logging
 from datetime import datetime
 from zzz_save_battle_class import save_battle
-from zzz_data_model import get_battle_by_name, clear_battle_info_table
+from zzz_data_model import get_battle_by_name, clear_battle_info_table, count_battle_info_rows
 
 # 配置日志
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -41,13 +41,19 @@ class SynBattle:
                     creation_date = datetime.fromtimestamp(data['modify_time'])
                     file_name = file_name_tool(data['file_name'])
                     battle = get_battle_by_name(file_name)
-                    if (battle is None) or (battle.battle_url is None) or (creation_date > battle.creation_date):
-                        logging.info(f"[{datetime.now()}] 发现配置【{data['file_name']}】存在差异，开始同步")
-                        if clear_battle_info_table():
-                            await self.getFileUrl(data['file_id'], data['busid'],
-                                                  file_name, data['uploader_name'],
-                                                  datetime.fromtimestamp(data['modify_time']))
-                            logging.info(f"[{datetime.now()}] 同步完成")
+                    count = count_battle_info_rows()  # 获取当前数据库中已存在的配置行数
+                    if ((battle is None) or (battle.battle_url is None) or
+                            (creation_date > battle.creation_date)) or (len(res) != count):
+                        if len(res) != count:
+                            logging.info(f"[{datetime.now()}] 数据库配置行数与群文件数量不一致，开始同步")
+                        else:
+                            logging.info(f"[{datetime.now()}] 发现配置【{data['file_name']}】存在差异，开始同步")
+                        # 清空表
+                        clear_battle_info_table()
+                        await self.getFileUrl(data['file_id'], data['busid'],
+                                              file_name, data['uploader_name'],
+                                              datetime.fromtimestamp(data['modify_time']))
+                        logging.info(f"[{datetime.now()}] 同步完成")
                         updated = True  # 设置标志变量为 True 表示有文件被更新
                 if not updated:
                     logging.info(f"[{datetime.now()}] 未发现更新，等待下一次检查...")

@@ -66,6 +66,19 @@ def clear_battle_info_table():
         session.close()
 
 
+def count_battle_info_rows():
+    try:
+        # 计算 BattleInfo 表中的行数
+        return session.query(BattleInfo.id).count()
+    except:
+        # 如果发生错误，回滚事务
+        session.rollback()
+        raise
+    finally:
+        # 关闭会话
+        session.close()
+
+
 class BattleInfo(Base):
     __tablename__ = 'battle_info'
     id = Column(Integer, primary_key=True, autoincrement=True)
