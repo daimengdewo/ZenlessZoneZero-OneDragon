@@ -43,13 +43,14 @@ class SynBattle:
                     battle = get_battle_by_name(file_name)
                     count = count_battle_info_rows()  # 获取当前数据库中已存在的配置行数
                     if ((battle is None) or (battle.battle_url is None) or
-                            (creation_date > battle.creation_date)) or (len(res) != count):
-                        if len(res) != count:
+                            (creation_date > battle.creation_date)) or ((len(res) - 1) != count):
+                        if (len(res) - 1) != count:
                             logging.info(f"[{datetime.now()}] 数据库配置行数与群文件数量不一致，开始同步")
+                            if not updated:
+                                # 清空表
+                                clear_battle_info_table()
                         else:
                             logging.info(f"[{datetime.now()}] 发现配置【{data['file_name']}】存在差异，开始同步")
-                        # 清空表
-                        clear_battle_info_table()
                         await self.getFileUrl(data['file_id'], data['busid'],
                                               file_name, data['uploader_name'],
                                               datetime.fromtimestamp(data['modify_time']))
